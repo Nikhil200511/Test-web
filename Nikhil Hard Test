@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Local Shop Template</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#0f172a;
+  --accent:#22c55e;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --muted:#64748b;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
+body{background:var(--bg);color:#111}
+
+/* HEADER */
+header{
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+  color:white;
+  padding:24px 16px;
+  text-align:center;
+}
+header h1{font-size:24px;font-weight:700}
+header p{font-size:14px;color:#cbd5f5;margin-top:4px}
+
+/* SEARCH */
+.search-wrap{padding:12px}
+.search{
+  width:100%;padding:12px;border-radius:12px;border:none;
+  box-shadow:0 5px 20px rgba(0,0,0,0.08);
+}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;overflow:auto;padding:12px}
+.filters button{
+  border:none;background:white;padding:8px 14px;border-radius:999px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.05);cursor:pointer;font-size:13px;
+}
+.filters .active{background:#0f172a;color:white}
+
+/* PRODUCTS */
+.products{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px;padding:12px;
+}
+.card{
+  background:var(--card);
+  border-radius:16px;
+  padding:10px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.05);
+  display:flex;flex-direction:column;
+}
+.card img{width:100%;height:120px;object-fit:cover;border-radius:12px}
+.card h3{font-size:14px;margin:6px 0}
+.card p{font-size:12px;color:var(--muted)}
+.price{font-weight:700;margin-top:auto}
+.card button{
+  margin-top:6px;border:none;background:var(--accent);color:white;
+  padding:8px;border-radius:8px;cursor:pointer;font-size:13px;
+}
+
+/* CART FLOAT */
+.cart-float{
+  position:fixed;bottom:20px;right:20px;
+  background:#0f172a;color:white;padding:14px;border-radius:999px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.25);cursor:pointer;
+}
+.badge{
+  position:absolute;top:-6px;right:-6px;background:#ef4444;color:white;
+  font-size:11px;padding:2px 6px;border-radius:999px;
+}
+
+/* MODALS */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center}
+.modal-box{
+  background:white;width:95%;max-width:420px;border-radius:16px;
+  max-height:90vh;overflow:auto;padding:16px;
+}
+
+.cart-row{display:flex;justify-content:space-between;margin:8px 0;font-size:14px}
+.qty button{margin:0 3px;border:none;background:#0f172a;color:white;padding:2px 6px;border-radius:4px}
+.total{font-weight:700;margin-top:10px}
+
+input,textarea{
+  width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid #ddd;
+}
+button.primary{
+  width:100%;margin-top:10px;padding:12px;border:none;border-radius:10px;
+  background:var(--accent);color:white;font-weight:600;cursor:pointer;
+}
+
+/* ADMIN */
+.admin{
+  position:fixed;top:10px;right:10px;background:black;color:white;
+  padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;
+}
+
+/* WHATSAPP */
+.whatsapp{
+  position:fixed;bottom:20px;left:20px;background:#25D366;color:white;
+  padding:12px 16px;border-radius:999px;text-decoration:none;font-size:14px;
+}
+</style>
+</head>
+<body>
+
+<div class="admin" onclick="adminLogin()">Admin</div>
+
+<header>
+  <h1>Test Web Store</h1>
+  <p>Fresh groceries delivered fast</p>
+</header>
+
+<div class="search-wrap">
+  <input class="search" placeholder="Search products..." oninput="searchProducts(this.value)">
+</div>
+
+<div class="filters" id="filters"></div>
+<div class="products" id="grid"></div>
+
+<div class="cart-float" onclick="openCart()">
+  🛒<span class="badge" id="count">0</span>
+</div>
+
+<!-- CART -->
+<div class="modal" id="cartModal">
+  <div class="modal-box">
+    <h3>Your Cart</h3>
+    <div id="cartItems"></div>
+    <div class="total" id="total"></div>
+    <button class="primary" onclick="checkout()">Place Order</button>
+    <button onclick="closeCart()">Close</button>
+  </div>
+</div>
+
+<!-- CHECKOUT -->
+<div class="modal" id="checkoutModal">
+  <div class="modal-box">
+    <h3>Checkout</h3>
+    <form action="https://formspree.io/f/mvzbylzq" method="POST" id="orderForm">
+      <input type="hidden" name="Order Summary" id="summary">
+      <input required name="Name" placeholder="Your Name">
+      <input required name="Phone" placeholder="Phone">
+      <textarea required name="Address" placeholder="Delivery Address"></textarea>
+      <textarea name="Notes" placeholder="Notes"></textarea>
+      <button class="primary">Submit Order</button>
+    </form>
+    <button onclick="closeCheckout()">Cancel</button>
+  </div>
+</div>
+
+<a class="whatsapp" href="https://wa.me/12345678910">Chat on WhatsApp</a>
+
+<script>
+/* DATA */
+let products=JSON.parse(localStorage.getItem('products'))||[
+  {id:1,name:'Fresh Milk',price:60,cat:'Dairy',img:'https://i.ibb.co/FbrKm9TQ/image.jpg',desc:'Farm fresh'},
+  {id:2,name:'Bananas',price:40,cat:'Groceries',img:'https://i.ibb.co/FbrKm9TQ/image.jpg',desc:'1 dozen'},
+  {id:3,name:'Potato Chips',price:20,cat:'Snacks',img:'https://i.ibb.co/FbrKm9TQ/image.jpg',desc:'Crispy'},
+  {id:4,name:'Cold Drink',price:35,cat:'Beverages',img:'https://i.ibb.co/FbrKm9TQ/image.jpg',desc:'Chilled'}
+];
+
+let cart=JSON.parse(localStorage.getItem('cart'))||[];
+
+/* FILTERS */
+function buildFilters(){
+  let cats=['All',...new Set(products.map(p=>p.cat))];
+  const wrap=document.getElementById('filters');
+  wrap.innerHTML='';
+  cats.forEach(c=>{
+    wrap.innerHTML+=`<button onclick="filterCat('${c}',this)">${c}</button>`;
+  });
+}
+
+let activeCat='All';
+function filterCat(c,btn){
+  activeCat=c;
+  document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+/* SEARCH */
+let query='';
+function searchProducts(q){query=q.toLowerCase();render();}
+
+/* RENDER */
+function render(){
+  const grid=document.getElementById('grid');
+  grid.innerHTML='';
+  products
+    .filter(p=>activeCat==='All'||p.cat===activeCat)
+    .filter(p=>p.name.toLowerCase().includes(query))
+    .forEach(p=>{
+      grid.innerHTML+=`<div class='card'>
+        <img loading='lazy' src='${p.img}'>
+        <h3>${p.name}</h3>
+        <p>${p.desc}</p>
+        <div class='price'>₹${p.price}</div>
+        <button onclick='add(${p.id})'>Add</button>
+      </div>`;
+    });
+}
+
+/* CART */
+function add(id){
+  let item=cart.find(i=>i.id===id);
+  if(item)item.qty++;
+  else cart.push({...products.find(p=>p.id===id),qty:1});
+  saveCart();
+}
+function saveCart(){localStorage.setItem('cart',JSON.stringify(cart));updateCount();}
+function updateCount(){document.getElementById('count').innerText=cart.reduce((a,b)=>a+b.qty,0);renderCart();}
+
+function renderCart(){
+  const box=document.getElementById('cartItems');box.innerHTML='';
+  let total=0;
+  cart.forEach(i=>{
+    total+=i.price*i.qty;
+    box.innerHTML+=`<div class='cart-row'>${i.name} x ${i.qty}
+      <span class='qty'>
+        <button onclick='chg(${i.id},-1)'>-</button>
+        <button onclick='chg(${i.id},1)'>+</button>
+      </span>
+    </div>`;
+  });
+  document.getElementById('total').innerText='Total: ₹'+total+' (+ ₹30 delivery)';
+}
+function chg(id,d){
+  let i=cart.find(x=>x.id===id);
+  if(!i)return;
+  i.qty+=d;
+  if(i.qty<=0)cart=cart.filter(x=>x.id!==id);
+  saveCart();
+}
+
+/* MODALS */
+function openCart(){document.getElementById('cartModal').style.display='flex'}
+function closeCart(){document.getElementById('cartModal').style.display='none'}
+function checkout(){
+  if(!cart.length)return alert('Cart empty');
+  document.getElementById('checkoutModal').style.display='flex';
+  let sum='Order:\n';let total=0;
+  cart.forEach(i=>{sum+=`${i.name} x ${i.qty} = ₹${i.price*i.qty}\n`;total+=i.price*i.qty});
+  sum+='Total: ₹'+(total+30)+' (incl delivery)';
+  document.getElementById('summary').value=sum;
+}
+function closeCheckout(){document.getElementById('checkoutModal').style.display='none'}
+
+/* ADMIN */
+function adminLogin(){
+  const pass=prompt('Enter admin password');
+  if(pass==='1234'){
+    const name=prompt('Product name');
+    const price=+prompt('Price');
+    products.push({id:Date.now(),name,price,cat:'Groceries',img:'https://i.ibb.co/FbrKm9TQ/image.jpg',desc:'New'});
+    localStorage.setItem('products',JSON.stringify(products));
+    render();
+  }
+}
+
+/* INIT */
+buildFilters();render();updateCount();
+</script>
+</body>
+</html>
